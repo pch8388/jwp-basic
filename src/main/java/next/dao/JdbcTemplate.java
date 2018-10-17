@@ -12,19 +12,18 @@ import core.jdbc.ConnectionManager;
 public abstract class JdbcTemplate {
     
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    List query(String sql) throws SQLException{
+    List query(String sql, PreparedStatementSetter pstmtSetter, RowMapper rowMapper) throws SQLException{
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             con = ConnectionManager.getConnection();
             pstmt = con.prepareStatement(sql);
-            setValues(pstmt);
+            rs = pstmtSetter.setValues(pstmt).executeQuery();
             
-            rs = pstmt.executeQuery();
             List list = new ArrayList<>();
             if(rs.next()) {
-                list.add(mapRow(rs));
+                list.add(rowMapper.mapRow(rs));
             }
           
             return list;
@@ -41,19 +40,17 @@ public abstract class JdbcTemplate {
         }
     }
     
-    Object queryForObject(String sql) throws SQLException{
+    Object queryForObject(String sql, PreparedStatementSetter pstmtSetter, RowMapper rowMapper) throws SQLException{
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             con = ConnectionManager.getConnection();
             pstmt = con.prepareStatement(sql);
-            setValues(pstmt);
-            
-            rs = pstmt.executeQuery();
-          
+            rs = pstmtSetter.setValues(pstmt).executeQuery();
+
             if(rs.next()) {
-                return mapRow(rs);
+                return rowMapper.mapRow(rs);
             }
             return null;
         }finally {
@@ -69,15 +66,14 @@ public abstract class JdbcTemplate {
         }
     }
     
-    void update(String sql) throws SQLException {
+    void update(String sql, PreparedStatementSetter pstmtSetter) throws SQLException {
         Connection con = null;
         PreparedStatement pstmt = null;
         try {
             con = ConnectionManager.getConnection();
             pstmt = con.prepareStatement(sql);
-            setValues(pstmt);
-
-            pstmt.executeUpdate();
+            
+            pstmtSetter.setValues(pstmt).executeUpdate();
         } finally {
             if (pstmt != null) {
                 pstmt.close();
@@ -88,7 +84,4 @@ public abstract class JdbcTemplate {
             }
         }
     }
-    
-    abstract void setValues(PreparedStatement pstmt) throws SQLException;
-    abstract Object mapRow(ResultSet rs) throws SQLException;
 }
