@@ -9,7 +9,7 @@ import java.util.List;
 
 import core.jdbc.ConnectionManager;
 
-public abstract class JdbcTemplate {
+public class JdbcTemplate {
     
     <T> List<T> query(String sql, RowMapper<T> rowMapper, PreparedStatementSetter pstmtSetter){
         try (Connection con = ConnectionManager.getConnection();
@@ -17,7 +17,7 @@ public abstract class JdbcTemplate {
                 ResultSet rs = pstmtSetter.setValues(pstmt).executeQuery();){
             
             List<T> list = new ArrayList<>();
-            if(rs.next()) {
+            while(rs.next()) {
                 list.add(rowMapper.mapRow(rs));
             }
           
